@@ -1,0 +1,5 @@
+fly.toml
+.env
+.env.*
+!env.example
+example.env

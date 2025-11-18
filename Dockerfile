@@ -14,10 +14,12 @@ RUN apt-get update && apt-get install -y \
 COPY ./app ./app
 COPY requirements.txt ./requirements.txt
 COPY alembic ./alembic
-COPY .env ./example.env
+
 
 # Встановлюємо Python-залежності
 RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
 
 # Порт, на якому буде працювати FastAPI
 EXPOSE 8080

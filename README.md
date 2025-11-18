@@ -1192,6 +1192,8 @@ Alembic-вставки при старті
 Koyeb
 
 Fly.io
+Кожен у команді копіює:
+cp .env.example .env
 
 Railway
 
