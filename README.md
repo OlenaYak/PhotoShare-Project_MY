@@ -633,6 +633,41 @@ transformed_url — URL трансформованого зображення
 
 "transform_url": "https://res.cloudinary.com/.../transformed_image.png"
 
+🎯 Приклад -> ДОДАТИ БУДЬ-ЯКИЙ ТЕКСТ (до 100 символів)
+.... замість "Hello from the top!" вводимо свій текст .....
+
+{
+"text": {
+"use_filter": true,
+"font_size": 70,
+"text": "Hello from the top!"
+},
+"circle": {
+"use_filter": false,
+"height": 400,
+"width": 400
+},
+"effect": {
+"use_filter": false,
+"art_audrey": false,
+"art_zorro": false,
+"cartoonify": false,
+"blur": false
+},
+"resize": {
+"use_filter": false,
+"crop": false,
+"fill": false,
+"height": 400,
+"width": 400
+},
+"rotate": {
+"use_filter": false,
+"width": 400,
+"degree": 0
+}
+}
+
 🎯 Приклад -> ПОВЕРНУТИ ФОТО НА 45°
 {
 "circle": {
