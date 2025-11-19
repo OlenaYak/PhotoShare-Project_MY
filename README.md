@@ -1379,3 +1379,14 @@ alembic upgrade head
 Кожен може робити нову гілку від актуального main, щоб мати останні deployment-файли і налаштування.
 ### Контакти
 
+fly secrets set SQLALCHEMY_DATABASE_URL="postgres://user:pass@host:port/db"      
+fly secrets set SECRET_KEY="UN3g7Nu89UbkA5RLVUiUrgPY"                                                 
+fly secrets set CLOUDINARY_NAME="your_cloudinary_name"
+fly secrets set CLOUDINARY_API_KEY="your_cloudinary_api_key"
+fly secrets set CLOUDINARY_API_SECRET="your_cloudinary_api_secret"                          
+fly secrets set MAIL_USERNAME="your_email_username"
+fly secrets set MAIL_PASSWORD="your_email_password"
+fly secrets set MAIL_FROM="your_email_from_address"
+fly secrets set MAIL_PORT=587                                            
+fly secrets set MAIL_SERVER="smtp.example.com"                                           
+fly secrets set REDIS_URL="redis://user:pass@host:port"                 
