@@ -1223,6 +1223,73 @@ PostgreSQL
 
 Alembic-вставки при старті
 
+### Postgres
+Крок 1 — Створити Postgres у Fly.io
+
+Виконай:
+
+fly postgres create
+
+Крок 2 — Дізнатися connection string
+
+Після створення виконай:
+fly postgres list
+або:
+fly postgres connection-string -a ## photoshare-1-db ##
+
+там буде ім’я кластера, приблизно:
+
+
+NAME                        ...
+photoshare-project-1-db     ...
+
+Тепер:
+
+fly postgres connect -a photoshare-project-1-db
+або отримай URL так:
+
+fly postgres connection-string -a photoshare-project-1-db
+Fly видасть рядок формату:
+
+postgres://postgres:SOME_PASSWORD@photoshare-project-1-db.internal:5432/photoshare
+
+✅ Крок 3 — Записати цей URL у secrets
+fly secrets set sqlalchemy_database_url="postgres://postgres:пароль@photoshare-project-1-db.internal:5432/photoshare"
+
+або, якщо у тебе поле нижнього регістру:
+
+fly secrets set SQLALCHEMY_DATABASE_URL="..."
+
+Перевірити підключення до бази з терміналу:
+Правильна команда виглядає так:
+fly mpg connect q49ypo4wlylr17ln
+
+Якщо потрібно підключитися під іншим користувачем — -u <username>.
+
+Наприклад, можна повністю так:
+
+fly mpg connect q49ypo4wlylr17ln -d fly-db -u fly-user
+
+
+Це відкриє psql консоль, і ти зможеш виконувати SQL-запити.
+
+Наприклад, для PhotoShare можна одразу створити таблицю для збереження фото:
+
+-- Перевірка підключення
+\conninfo
+
+-- Створення таблиці для фото
+CREATE TABLE photos (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    url TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Перевірка таблиць у базі
+\dt
+
+
 ### 1️⃣6️⃣ Деплой
 
 Рекомендовані платформи:
@@ -1236,3 +1303,4 @@ Railway
 Render
 
 ### Контакти
+
