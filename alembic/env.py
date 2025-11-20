@@ -1,9 +1,3 @@
-import os
-from dotenv import load_dotenv
-
-# Завантажуємо змінні оточення з .env (розташованого на рівні проекту)
-dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
-load_dotenv(dotenv_path)
 
 from logging.config import fileConfig
 from sqlalchemy import pool
