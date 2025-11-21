@@ -1,12 +1,11 @@
 import pickle
 from typing import Optional
-
 import redis.asyncio as aioredis
 from jose import JWTError, jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer, HTTPBearer
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from app.database.connect_db import get_db
@@ -16,6 +15,12 @@ from app.conf.messages import FAIL_EMAIL_VERIFICATION, INVALID_SCOPE, NOT_VALIDA
 
 security = HTTPBearer()
 
+
+minutes = 15
+days = 0
+expires_delta = None
+expire = datetime.now(timezone.utc) + (timedelta(seconds=expires_delta) if expires_delta else timedelta(minutes=minutes, days=days))
+print(expire)
 
 class Auth:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -34,19 +39,44 @@ class Auth:
         return self.pwd_context.hash(password[:72])
 
     # --- TOKEN CREATION ---
-    async def create_access_token(self, data: dict, expires_delta: Optional[float] = None) -> str:
+    async def create_access_token(self, data: dict, expires_delta: Optional[int] = None) -> str:
         return self._create_token(data, expires_delta, minutes=15, scope="access_token")
 
-    async def create_refresh_token(self, data: dict, expires_delta: Optional[float] = None) -> str:
+    async def create_refresh_token(self, data: dict, expires_delta: Optional[int] = None) -> str:
         return self._create_token(data, expires_delta, days=7, scope="refresh_token")
 
     def create_email_token(self, data: dict) -> str:
         return self._create_token(data, days=3, scope="email_token")
 
-    def _create_token(self, data: dict, expires_delta: Optional[float] = None, minutes: int = 0, days: int = 0, scope: str = "") -> str:
+    def _create_token(
+        self,
+        data: dict,
+        expires_delta: Optional[int] = None,  # секунди
+        minutes: int = 0,
+        days: int = 0,
+        scope: str = ""
+    ) -> str:
+        """
+        Створює JWT токен.
+        - expires_delta: час життя токена в секундах
+        - minutes, days: альтернатива для стандартного часу життя
+        """
         to_encode = data.copy()
-        expire = datetime.utcnow() + (expires_delta or timedelta(minutes=minutes, days=days))
-        to_encode.update({"iat": datetime.utcnow(), "exp": expire, "scope": scope})
+        
+        now = datetime.now(timezone.utc)
+        expire = now + (timedelta(seconds=expires_delta) if expires_delta else timedelta(minutes=minutes, days=days))
+        
+        if expires_delta is not None:
+            expire = datetime.utcnow() + timedelta(seconds=expires_delta)
+        else:
+            expire = datetime.utcnow() + timedelta(minutes=minutes, days=days)
+        
+        to_encode.update({
+            "iat": now,
+            "exp": expire,
+            "scope": scope
+        })
+        
         return jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
 
     # --- TOKEN DECODING ---

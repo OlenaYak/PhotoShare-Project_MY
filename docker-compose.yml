@@ -1,35 +1,53 @@
+# =========================
+# Сервіси Docker Compose
+# =========================
 services:
+
+  # -------------------------
+  # PostgreSQL база даних
+  # -------------------------
   db:
-    image: postgres:14
-    container_name: python-project-db-1
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+    image: postgres:14  # Використовуємо офіційний образ PostgreSQL 14
+    container_name: python-project-db-1  # Ім’я контейнера
+    environment:  # Змінні середовища для конфігурації БД
+      POSTGRES_USER: ${POSTGRES_USER}  # Користувач з .env
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # Пароль з .env
+      POSTGRES_DB: ${POSTGRES_DB}  # Назва БД з .env
     ports:
-      - "5432:5432"
+      - "5432:5432"  # Проксіруємо порт для доступу з локальної машини
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Зберігаємо дані на локальному volume, щоб не втратити після перезапуску
 
+  # -------------------------
+  # Redis кеш
+  # -------------------------
   redis:
-    image: redis:8
+    image: redis:8  # Офіційний образ Redis 8
     container_name: python-project-redis-1
     ports:
-      - "6379:6379"
+      - "6379:6379"  # Проксіруємо порт для доступу з локальної машини
 
+  # -------------------------
+  # FastAPI веб-додаток
+  # -------------------------
   web:
-    build: .
+    build: .  # Будуємо образ із локального Dockerfile
     container_name: python-project-web-1
     command: uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+    # Запуск FastAPI через Uvicorn із авто-перезавантаженням
     ports:
-      - "8080:8080"
+      - "8080:8080"  # Проксіруємо порт веб-додатку
     depends_on:
-      - db
-      - redis
+      - db     # Web залежить від бази даних
+      - redis  # Web залежить від Redis
     env_file:
-      - .env
+      - .env  # Підключаємо файл .env з усіма змінними
     volumes:
-      - .:/app
+      - .:/app  # Монтуємо локальну директорію у контейнер для live-reload
 
+# =========================
+# Томи для збереження даних
+# =========================
 volumes:
-  postgres_data:
+  postgres_data:  # Volume для даних PostgreSQL

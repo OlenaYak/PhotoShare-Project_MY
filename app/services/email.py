@@ -101,8 +101,10 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=USER_NOT_ACTIVE)
     if not auth_service.verify_password(body.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_PASSWORD)
-
-    access_token = await auth_service.create_access_token(data={"sub": user.email}, expires_delta=7200)
+    
+    access_token = await auth_service.create_access_token(
+        data={"sub": user.email}, expires_delta=7200  # 2 години
+    )
     refresh_token = await auth_service.create_refresh_token(data={"sub": user.email})
     await repository_users.update_token(user, refresh_token, db)
 
