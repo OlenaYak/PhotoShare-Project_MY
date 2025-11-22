@@ -1,5 +1,7 @@
 # Project "PhotoShare" 📷
 
+
+
 # Запусти локально
 
 uvicorn app.main:app --reload
@@ -1341,6 +1343,7 @@ Web-додаток підключається до Redis через URL.
 
 Redis і Cloudinary залишаються зовнішніми сервісами, просто твоє додаток з ними працює через мережу.
 
+
 Перевірити список секретів
 fly secrets list
 
@@ -1399,6 +1402,7 @@ fly secrets set SECRET_KEY="..." SQLALCHEMY_DATABASE_URL="..."
 
 4️⃣ Локальний запуск
 uvicorn app.main:app --reload
+ 
 alembic upgrade head
 
 Переконайтеся, що база даних доступна і міграції застосовані.
@@ -1409,16 +1413,38 @@ alembic upgrade head
 
 Кожен може робити нову гілку від актуального main, щоб мати останні deployment-файли і налаштування.
 
+fly secrets set SQLALCHEMY_DATABASE_URL="postgres://user:pass@host:port/db"
+fly secrets set SECRET_KEY="UN3g7Nu89UbkA5RLVUiUrgPY"
+fly secrets set CLOUDINARY_NAME="your_cloudinary_name" fly secrets set CLOUDINARY_API_KEY="your_cloudinary_api_key" fly secrets set CLOUDINARY_API_SECRET="your_cloudinary_api_secret"
+fly secrets set MAIL_USERNAME="your_email_username" fly secrets set MAIL_PASSWORD="your_email_password" fly secrets set MAIL_FROM="your_email_from_address" fly secrets set MAIL_PORT=587
+fly secrets set MAIL_SERVER="smtp.example.com"
+fly secrets set REDIS_URL="redis://user:pass@host:port"
+
 ### Контакти
 
-fly secrets set SQLALCHEMY_DATABASE_URL="postgres://user:pass@host:port/db"  
-fly secrets set SECRET_KEY="UN3g7Nu89UbkA5RLVUiUrgPY"  
-fly secrets set CLOUDINARY_NAME="your_cloudinary_name"
-fly secrets set CLOUDINARY_API_KEY="your_cloudinary_api_key"
-fly secrets set CLOUDINARY_API_SECRET="your_cloudinary_api_secret"  
-fly secrets set MAIL_USERNAME="your_email_username"
-fly secrets set MAIL_PASSWORD="your_email_password"
-fly secrets set MAIL_FROM="your_email_from_address"
-fly secrets set MAIL_PORT=587  
-fly secrets set MAIL_SERVER="smtp.example.com"  
-fly secrets set REDIS_URL="redis://user:pass@host:port"
+# DATABASE
+SQLALCHEMY_DATABASE_URL=postgresql://neondb_owner:npg_8LmWbOHC3syT@ep-round-snow-adrv766l-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+
+# AUTH
+SECRET_KEY=твій_секретний_ключ
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+EXPIRE_MINUTES=60
+
+# MAIL
+MAIL_USERNAME=твоє_ім'я_юзера
+MAIL_PASSWORD=твій_пароль
+MAIL_FROM=твоя_пошта
+MAIL_PORT=587
+MAIL_SERVER=smtp.gmail.com
+
+# REDIS
+REDIS_URL=redis://default:a9074adb8fb547d996908034247e4ff0@fly-cold-dew-5968.upstash.io:6379
+
+# CLOUDINARY
+CLOUDINARY_NAME=твоє_ім'я_Cloudinary
+CLOUDINARY_API_KEY=твій_API_key
+CLOUDINARY_API_SECRET=твій_API_secret
+
+
+### Контакти

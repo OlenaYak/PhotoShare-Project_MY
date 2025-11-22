@@ -1,13 +1,14 @@
 from datetime import datetime
 from typing import List, Optional
-
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from app.database.models import UserRoleEnum
-
 
 # ------------------- User Models -------------------
 
 class UserModel(BaseModel):
+    """
+    Модель для створення користувача.
+    """
     username: str = Field(min_length=5, max_length=25)
     email: EmailStr
     password: str = Field(min_length=6, max_length=30)
@@ -16,10 +17,16 @@ class UserModel(BaseModel):
 
 
 class UserUpdateModel(BaseModel):
+    """
+    Модель для оновлення username користувача.
+    """
     username: str = Field(min_length=5, max_length=25)
 
 
 class UserDb(BaseModel):
+    """
+    Модель користувача для відповіді із бази даних.
+    """
     id: int
     username: str
     email: str
@@ -31,11 +38,17 @@ class UserDb(BaseModel):
 
 
 class UserResponse(BaseModel):
+    """
+    Відповідь при створенні користувача.
+    """
     user: UserDb
     detail: str = "User successfully created"
 
 
 class UserProfileModel(BaseModel):
+    """
+    Повний профіль користувача.
+    """
     username: str
     email: EmailStr
     avatar: Optional[str]
@@ -49,6 +62,9 @@ class UserProfileModel(BaseModel):
 # ------------------- Auth / Token -------------------
 
 class TokenModel(BaseModel):
+    """
+    Модель токенів для аутентифікації.
+    """
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
@@ -70,24 +86,23 @@ class HashtagModel(BaseModel):
 
 
 class HashtagResponse(HashtagModel):
+    """
+    Відповідь з інформацією про хештег.
+    """
     pass
-    # id: int
-    # user_id: int
-    # created_at: datetime
-
-    # model_config = {"from_attributes": True}
 
 
 class HashtagsLimited(BaseModel):
+    """
+    Модель для обмеження кількості хештегів до 5.
+    """
     hashtags: List[str] = Field(default_factory=list)
-    # hashtags: List[str] = []
 
     @field_validator("hashtags")
     def validate_tags(cls, v):
         if len(v or []) > 5:
             raise ValueError("Too many hashtags. Maximum 5 tags allowed.")
         return v
-
 
 
 # ------------------- Comments -------------------
@@ -98,7 +113,6 @@ class CommentBase(BaseModel):
 
 class CommentModel(CommentBase):
     id: int
-    text: str
     user_id: int
     post_id: int
     created_at: datetime
@@ -108,6 +122,9 @@ class CommentModel(CommentBase):
 
 
 class CommentUpdate(CommentModel):
+    """
+    Модель для оновлення коментаря.
+    """
     update_status: bool = True
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -117,7 +134,7 @@ class CommentUpdate(CommentModel):
 # ------------------- Ratings -------------------
 
 class RatingBase(BaseModel):
-    rate: int
+    rate: int = Field(ge=1, le=5)
 
 
 class RatingModel(RatingBase):
@@ -131,37 +148,35 @@ class RatingModel(RatingBase):
 
 # ------------------- Posts -------------------
 
-# class PostBase(HashtagsLimited):
-#     id: int
-#     image_url: Optional[str] = Field(max_length=300, default=None)
-#     transform_url: Optional[str] = Field(max_length=450, default=None)
-#     title: str = Field(max_length=45)
-#     descr: str = Field(max_length=450)
 class PostBase(BaseModel):
+    """
+    Базова модель поста.
+    """
     image_url: Optional[str] = Field(max_length=300, default=None)
     transform_url: Optional[str] = Field(max_length=450, default=None)
     title: str = Field(max_length=45)
     descr: str = Field(max_length=450)
-    # hashtags: List[str] = []
-
-    # @field_validator("hashtags")
-    # def validate_tags(cls, v):
-    #     if len(v or []) > 5:
-    #         raise ValueError("Too many hashtags. Maximum 5 tags allowed.")
-    #     return v
 
 
 class PostModel(PostBase, HashtagsLimited):
+    """
+    Модель поста із хештегами.
+    """
     pass
 
 
 class PostUpdate(PostBase):
+    """
+    Модель для оновлення поста.
+    """
     title: str = Field(max_length=45)
     descr: str = Field(max_length=450)
-    # hashtags: List[str] = []
 
 
 class PostResponse(PostBase):
+    """
+    Відповідь при отриманні поста.
+    """
     id: int
     hashtags: List[HashtagModel]
     avg_rating: Optional[float] = 0.0

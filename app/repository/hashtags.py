@@ -1,25 +1,29 @@
+"""
+hashtags.py — функції для роботи з хештегами у PhotoShare API.
+
+Містить CRUD-операції та методи для отримання тегів користувачів і загальних тегів.
+"""
+
 from typing import List
-
 from sqlalchemy.orm import Session
-
 from app.database.models import Hashtag, User
 from app.schemas import HashtagBase
 
 
 async def create_tag(body: HashtagBase, user: User, db: Session) -> Hashtag:
     """
-    The create_tag function creates a new tag in the database.
-    
-    :param body: HashtagBase: Get the title of the hashtag from the request body
-    :param user: User: Get the user id of the current user
-    :param db: Session: Access the database
-    :return: A hashtag object
+    Створює новий хештег або повертає існуючий, якщо він вже є.
+
+    :param body: Об'єкт HashtagBase з назвою хештегу
+    :param user: Поточний користувач, що створює тег
+    :param db: SQLAlchemy сесія
+    :return: Об'єкт Hashtag
     """
     tag = db.query(Hashtag).filter(Hashtag.title == body.title).first()
     if not tag:
         tag = Hashtag(
             title=body.title,
-            user_id = user.id,
+            user_id=user.id,
         )
         db.add(tag)
         db.commit()
@@ -29,59 +33,48 @@ async def create_tag(body: HashtagBase, user: User, db: Session) -> Hashtag:
 
 async def get_my_tags(skip: int, limit: int, user: User, db: Session) -> List[Hashtag]:
     """
-    The get_my_tags function returns a list of Hashtag objects that are associated with the user.
-    The skip and limit parameters allow for pagination.
-    
-    :param skip: int: Skip the first n tags in the database
-    :param limit: int: Limit the number of results returned
-    :param user: User: Get the user_id of the current user
-    :param db: Session: Access the database
-    :return: A list of hashtags that belong to the user
+    Повертає список хештегів, створених поточним користувачем.
+
+    :param skip: Кількість тегів, що пропускаються (для пагінації)
+    :param limit: Максимальна кількість тегів, що повертається
+    :param user: Поточний користувач
+    :param db: SQLAlchemy сесія
+    :return: Список об'єктів Hashtag
     """
     return db.query(Hashtag).filter(Hashtag.user_id == user.id).offset(skip).limit(limit).all()
 
 
 async def get_all_tags(skip: int, limit: int, db: Session) -> List[Hashtag]:
     """
-    The get_all_tags function returns a list of all the tags in the database.
-        
-    
-    :param skip: int: Skip the first n tags
-    :param limit: int: Limit the number of rows returned by the query
-    :param db: Session: Pass in the database session
-    :return: A list of hashtag objects
+    Повертає список усіх тегів у системі.
+
+    :param skip: Кількість тегів, що пропускаються (для пагінації)
+    :param limit: Максимальна кількість тегів, що повертається
+    :param db: SQLAlchemy сесія
+    :return: Список об'єктів Hashtag
     """
     return db.query(Hashtag).offset(skip).limit(limit).all()
 
 
 async def get_tag_by_id(tag_id: int, db: Session) -> Hashtag:
     """
-    The get_tag_by_id function returns a Hashtag object from the database based on its id.
-        Args:
-            tag_id (int): The id of the Hashtag to be returned.
-            db (Session): A Session instance for interacting with the database.
-        Returns:
-            A single Hashtag object matching the given tag_id.
-    
-    :param tag_id: int: Specify the id of the tag we want to retrieve
-    :param db: Session: Pass the database session to the function
-    :return: A hashtag object
+    Повертає конкретний хештег за його ID.
+
+    :param tag_id: ID тегу
+    :param db: SQLAlchemy сесія
+    :return: Об'єкт Hashtag або None, якщо тег не знайдено
     """
     return db.query(Hashtag).filter(Hashtag.id == tag_id).first()
-    
+
 
 async def update_tag(tag_id: int, body: HashtagBase, db: Session) -> Hashtag | None:
     """
-    The update_tag function updates a tag in the database.
-        Args:
-            tag_id (int): The id of the tag to update.
-            body (HashtagBase): The new values for the updated tag.
-            db (Session): A connection to our database session, used for querying and committing changes.
-    
-    :param tag_id: int: Identify the tag to be updated
-    :param body: HashtagBase: Pass in the new title for the tag
-    :param db: Session: Pass the database session to the function
-    :return: A hashtag
+    Оновлює назву хештегу за його ID.
+
+    :param tag_id: ID тегу для оновлення
+    :param body: Об'єкт HashtagBase з новою назвою
+    :param db: SQLAlchemy сесія
+    :return: Оновлений об'єкт Hashtag або None, якщо тег не знайдено
     """
     tag = db.query(Hashtag).filter(Hashtag.id == tag_id).first()
     if tag:
@@ -92,11 +85,11 @@ async def update_tag(tag_id: int, body: HashtagBase, db: Session) -> Hashtag | N
 
 async def remove_tag(tag_id: int, db: Session) -> Hashtag | None:
     """
-    The remove_tag function removes a tag from the database.
-        
-    :param tag_id: int: Specify the id of the tag to be removed
-    :param db: Session: Pass the database session to the function
-    :return: A hashtag object
+    Видаляє хештег за його ID.
+
+    :param tag_id: ID тегу для видалення
+    :param db: SQLAlchemy сесія
+    :return: Видалений об'єкт Hashtag або None, якщо тег не знайдено
     """
     tag = db.query(Hashtag).filter(Hashtag.id == tag_id).first()
     if tag:

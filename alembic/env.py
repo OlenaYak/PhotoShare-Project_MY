@@ -1,47 +1,49 @@
+"""
+env.py — конфігурація Alembic для управління міграціями бази даних.
+
+Цей файл налаштовує підключення до БД, логування та метадані моделей SQLAlchemy.
+Підтримуються два режими міграцій:
+1. offline — генерує SQL скрипти без підключення до БД
+2. online — виконує міграції безпосередньо в БД
+
+Автор: PhotoShare Project Team
+"""
+
 from logging.config import fileConfig
-from sqlalchemy import pool
-# from app.database.connect_db import Base
+from sqlalchemy import pool, create_engine
 from alembic import context
 from app.database.models import Base
 from app.conf.config import settings
-from sqlalchemy import create_engine
-import os
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+# ----------------------------------------------------------------------
+# Alembic Config object: доступ до параметрів у alembic.ini
+# ----------------------------------------------------------------------
 config = context.config
 
-# Використовуємо Pydantic Settings замість os.getenv
+# Використовуємо URL бази даних з Pydantic Settings
 config.set_main_option("sqlalchemy.url", settings.sqlalchemy_database_url)
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically. Я сьогодні не зроблю цей диплом і в мене не виходе треба ще посидіти
+# ----------------------------------------------------------------------
+# Логування Alembic
+# ----------------------------------------------------------------------
 if config.config_file_name is not None:
+    # Налаштування логування з alembic.ini
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
+# ----------------------------------------------------------------------
+# Метадані моделей SQLAlchemy
+# ----------------------------------------------------------------------
+# Використовуються для автогенерації міграцій
 target_metadata = Base.metadata
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
-
-
+# ----------------------------------------------------------------------
+# Режим offline
+# ----------------------------------------------------------------------
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode.
-
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
+    """
+    Виконує міграції в offline-режимі:
+    - Генерує SQL скрипти без підключення до БД.
+    - Підтримує 'literal_binds' для вставки значень у SQL.
     """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
@@ -54,17 +56,18 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
-
+# ----------------------------------------------------------------------
+# Режим online
+# ----------------------------------------------------------------------
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
+    """
+    Виконує міграції в online-режимі:
+    - Підключається безпосередньо до бази даних.
+    - Виконує команди CREATE, ALTER, DROP таблиць та колонок.
     """
     connectable = create_engine(
         settings.sqlalchemy_database_url,
-        poolclass=pool.NullPool,
+        poolclass=pool.NullPool,  # Без пулінгу для короткочасного підключення
     )
 
     with connectable.connect() as connection:
@@ -76,7 +79,9 @@ def run_migrations_online() -> None:
         with context.begin_transaction():
             context.run_migrations()
 
-
+# ----------------------------------------------------------------------
+# Вибір режиму виконання
+# ----------------------------------------------------------------------
 if context.is_offline_mode():
     run_migrations_offline()
 else:

@@ -11,8 +11,8 @@ from app.services.auth import auth_service
 from app.conf.messages import (
     ALREADY_EXISTS, EMAIL_ALREADY_CONFIRMED, EMAIL_CONFIRMED,
     EMAIL_NOT_CONFIRMED, INVALID_EMAIL, INVALID_PASSWORD, INVALID_TOKEN,
-    SUCCESS_CREATE_USER, VERIFICATION_ERROR, CHECK_YOUR_EMAIL,
-    USER_NOT_ACTIVE, USER_IS_LOGOUT
+    SUCCESS_CREATE_USER, VERIFICATION_ERROR,
+    CHECK_YOUR_EMAIL, USER_NOT_ACTIVE, USER_IS_LOGOUT
 )
 
 router = APIRouter(prefix='/auth', tags=["authentication"])
@@ -20,7 +20,25 @@ security = HTTPBearer()
 
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def signup(body: UserModel, background_tasks: BackgroundTasks, request: Request, db: Session = Depends(get_db)):
+async def signup(
+    body: UserModel,
+    background_tasks: BackgroundTasks,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Реєстрація нового користувача.
+    - Перевіряє, чи користувач вже існує.
+    - Хешує пароль.
+    - Створює користувача.
+    - Відправляє email для підтвердження.
+
+    :param body: Дані нового користувача
+    :param background_tasks: Використовується для асинхронної відправки email
+    :param request: FastAPI Request для побудови URL
+    :param db: SQLAlchemy сесія
+    :return: UserResponse з повідомленням
+    """
     exist_user = await repository_users.get_user_by_email(body.email, db)
     if exist_user:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=ALREADY_EXISTS)
@@ -32,30 +50,33 @@ async def signup(body: UserModel, background_tasks: BackgroundTasks, request: Re
 
 
 @router.post("/login", response_model=TokenModel)
-async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(
+    body: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
     """
-    Authenticate user and return access and refresh tokens.
-    OAuth2PasswordRequestForm sends username & password as form data.
+    Авторизація користувача.
+    - Перевіряє email і пароль.
+    - Перевіряє підтвердження email.
+    - Перевіряє активність користувача.
+    - Генерує access та refresh токени.
+
+    :param body: OAuth2PasswordRequestForm з username та password
+    :param db: SQLAlchemy сесія
+    :return: TokenModel з access та refresh токенами
     """
     user = await repository_users.get_user_by_email(body.username, db)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_EMAIL)
-
     if not user.is_verify:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=EMAIL_NOT_CONFIRMED)
-
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=USER_NOT_ACTIVE)
-
     if not auth_service.verify_password(body.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_PASSWORD)
 
-    # Generate JWT tokens
-    access_token = await auth_service.create_access_token(
-        data={"sub": user.email}, expires_delta=7200
-    )
+    access_token = await auth_service.create_access_token(data={"sub": user.email}, expires_delta=7200)
     refresh_token = await auth_service.create_refresh_token(data={"sub": user.email})
-
     await repository_users.update_token(user, refresh_token, db)
 
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
@@ -67,6 +88,15 @@ async def logout(
     db: Session = Depends(get_db),
     current_user: User = Depends(auth_service.get_current_user)
 ):
+    """
+    Вихід користувача.
+    - Додає access токен у чорний список.
+
+    :param credentials: HTTPAuthorizationCredentials з токеном
+    :param db: SQLAlchemy сесія
+    :param current_user: Поточний користувач
+    :return: Повідомлення про успішний вихід
+    """
     token = credentials.credentials
     await repository_users.add_to_blacklist(token, db)
     return {"message": USER_IS_LOGOUT}
@@ -78,6 +108,16 @@ async def refresh_token(
     db: Session = Depends(get_db),
     current_user: User = Depends(auth_service.get_current_user)
 ):
+    """
+    Оновлення access та refresh токенів.
+    - Перевіряє, чи токен співпадає з збереженим у БД.
+    - Генерує нові токени.
+
+    :param credentials: HTTPAuthorizationCredentials з refresh токеном
+    :param db: SQLAlchemy сесія
+    :param current_user: Поточний користувач
+    :return: Новий access та refresh токени
+    """
     token = credentials.credentials
     email = await auth_service.decode_refresh_token(token)
 
@@ -95,6 +135,15 @@ async def refresh_token(
 
 @router.get('/confirmed_email/{token}')
 async def confirmed_email(token: str, db: Session = Depends(get_db)):
+    """
+    Підтвердження email за токеном.
+    - Перевіряє валідність токена.
+    - Позначає email як підтверджений.
+
+    :param token: Токен з листа підтвердження
+    :param db: SQLAlchemy сесія
+    :return: Повідомлення про статус підтвердження
+    """
     email = await auth_service.get_email_from_token(token)
     user = await repository_users.get_user_by_email(email, db)
     if user is None:
@@ -113,6 +162,17 @@ async def request_email(
     request: Request,
     db: Session = Depends(get_db)
 ):
+    """
+    Повторне відправлення листа для підтвердження email.
+    - Якщо email користувача вже підтверджено — повертає повідомлення.
+    - Інакше надсилає email асинхронно.
+
+    :param body: RequestEmail з email користувача
+    :param background_tasks: Для асинхронної відправки email
+    :param request: FastAPI Request для побудови URL
+    :param db: SQLAlchemy сесія
+    :return: Повідомлення про статус відправки
+    """
     user = await repository_users.get_user_by_email(body.email, db)
 
     if user is None:

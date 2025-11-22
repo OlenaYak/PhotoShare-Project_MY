@@ -1,13 +1,16 @@
-import base64
+"""
+transform.py — функції для обробки трансформацій постів та генерації QR-кодів.
+
+Містить:
+- transform_metod: застосування ефектів, кадрування, тексту та обертання через Cloudinary
+- show_qr: генерація QR-коду для трансформованого поста
+"""
+
+import os
+from fastapi import Request
+from sqlalchemy.orm import Session
 import cloudinary
 import pyqrcode
-import os
-import base64
-import pyqrcode
-import io
-from fastapi import Request
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
 
 from app.database.models import Post, User
 from app.conf.config import init_cloudinary
@@ -17,27 +20,34 @@ from app.conf.messages import NOT_FOUND
 
 async def transform_metod(post_id: int, body: TransformBodyModel, user: User, db: Session) -> Post | None:
     """
-    The transform_metod function takes in a post_id, body, user and db as parameters.
-    It then queries the database for the post with that id and if it exists it creates an empty list called transformation.
-    If any of the filters are used in body (circle, effect, resize or text) then they are added to transformation list. 
-    If there is anything in transformation list then cloudinary is initialized and url is created using build_url function from cloudinary library. 
-    The url contains all transformations that were added to transofrmation list before this step was executed.
-    
-    :param post_id: int: Identify the post that will be transformed
-    :param body: TransformBodyModel: Get the data from the request body
-    :param user: User: Get the user id from the database
-    :param db: Session: Access the database
-    :return: A post with the applied transformations
+    Застосовує трансформації до зображення поста через Cloudinary.
+
+    Підтримує:
+    - круглі кадри (circle),
+    - ефекти (effect),
+    - зміни розмірів (resize),
+    - текстові накладки (text),
+    - обертання та дзеркальне відображення (rotate).
+
+    :param post_id: ID поста для трансформації
+    :param body: TransformBodyModel — параметри трансформацій
+    :param user: Поточний користувач, власник поста
+    :param db: SQLAlchemy сесія
+    :return: Оновлений об'єкт Post з полем transform_url або None, якщо пост не знайдено
     """
-    post= db.query(Post).filter(Post.user_id == user.id, Post.id == post_id).first()
+    post = db.query(Post).filter(Post.user_id == user.id, Post.id == post_id).first()
     if post:
         transformation = []
-        
+
+        # Круглий кадр
         if body.circle.use_filter and body.circle.height and body.circle.width:
-            trans_list = [{'gravity': "face", 'height': f"{body.circle.height}", 'width': f"{body.circle.width}", 'crop': "thumb"},
-            {'radius': "max"}]
+            trans_list = [
+                {'gravity': "face", 'height': f"{body.circle.height}", 'width': f"{body.circle.width}", 'crop': "thumb"},
+                {'radius': "max"}
+            ]
             [transformation.append(elem) for elem in trans_list]
-        
+
+        # Ефекти
         if body.effect.use_filter:
             effect = ""
             if body.effect.art_audrey:
@@ -51,20 +61,22 @@ async def transform_metod(post_id: int, body: TransformBodyModel, user: User, db
             if effect:
                 transformation.append({"effect": f"{effect}"})
 
-        if body.resize.use_filter and body.resize.height and body.resize.height:
-            crop = ""
-            if body.resize.crop:
-                crop = "crop"
-            if body.resize.fill:
-                crop = "fill"
+        # Resize
+        if body.resize.use_filter and body.resize.height and body.resize.width:
+            crop = "crop" if body.resize.crop else "fill" if body.resize.fill else ""
             if crop:
                 trans_list = [{"gravity": "auto", 'height': f"{body.resize.height}", 'width': f"{body.resize.width}", 'crop': f"{crop}"}]
                 [transformation.append(elem) for elem in trans_list]
 
+        # Текст
         if body.text.use_filter and body.text.font_size and body.text.text:
-            trans_list = [{'color': "#FFFF00", 'overlay': {'font_family': "Times", 'font_size': f"{body.text.font_size}", 'font_weight': "bold", 'text': f"{body.text.text}"}}, {'flags': "layer_apply", 'gravity': "south", 'y': 20}]
+            trans_list = [
+                {'color': "#FFFF00", 'overlay': {'font_family': "Times", 'font_size': f"{body.text.font_size}", 'font_weight': "bold", 'text': f"{body.text.text}"}},
+                {'flags': "layer_apply", 'gravity': "south", 'y': 20}
+            ]
             [transformation.append(elem) for elem in trans_list]
 
+        # Обертання
         if body.rotate.use_filter and body.rotate.width and body.rotate.degree:
             trans_list = [{'width': f"{body.rotate.width}", 'crop': "scale"}, {'angle': "vflip"}, {'angle': f"{body.rotate.degree}"}]
             [transformation.append(elem) for elem in trans_list]
@@ -80,33 +92,28 @@ async def transform_metod(post_id: int, body: TransformBodyModel, user: User, db
         return post
 
 
-async def show_qr(post_id: int, user: User, db: Session, request):
+async def show_qr(post_id: int, user: User, db: Session, request: Request) -> dict | None:
     """
-    The show_qr function takes in a post_id and user object, and returns the QR code for that post.
-        Args:
-            post_id (int): The id of the Post to be shown.
-            user (User): The User who is requesting to see this Post's QR code.
-    
-    :param post_id: int: Specify the post id of the qr code that needs to be shown
-    :param user: User: Get the user's id
-    :param db: Session: Access the database
-    :return: A base64 encoded image of the qr code
+    Генерує QR-код для трансформованого зображення поста.
+
+    :param post_id: ID поста
+    :param user: Поточний користувач, власник поста
+    :param db: SQLAlchemy сесія
+    :param request: Об'єкт FastAPI Request для формування базового URL
+    :return: Словник з ключем 'qr_url' (URL до PNG QR-коду) або None, якщо пост не знайдено або transform_url відсутній
     """
     post = db.query(Post).filter(Post.user_id == user.id, Post.id == post_id).first()
     if post and post.transform_url:
-        import os
-        import pyqrcode
-
-        # Створюємо директорію для QR-кодів, якщо її немає
+        # Створюємо директорію для QR-кодів
         qr_dir = "media/qrcodes"
         os.makedirs(qr_dir, exist_ok=True)
 
-        # Генеруємо QR
+        # Генеруємо QR-код
         img = pyqrcode.create(post.transform_url)
         qr_path = f"{qr_dir}/{post.id}.png"
         img.png(qr_path, scale=6)
 
-        # Повертаємо URL для доступу через Swagger / браузер
+        # Формуємо повний URL
         base_url = str(request.base_url).rstrip("/")
         qr_url = f"{base_url}/{qr_path}"
         return {"qr_url": qr_url}

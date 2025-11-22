@@ -1,11 +1,25 @@
+"""
+models.py — моделі бази даних для PhotoShare API.
+
+Містить:
+- Користувачів (User) з ролями
+- Пост (Post) та пов'язані таблиці
+- Хештеги (Hashtag) з Many-to-Many до постів
+- Коментарі (Comment)
+- Рейтинги (Rating)
+- Чорний список токенів (BlacklistToken)
+"""
+
 import enum
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, String, Table, Text, func, Enum
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy_utils import aggregated
 
 Base = declarative_base()
+
 # ---------------- ENUMS ---------------- #
 class UserRoleEnum(enum.Enum):
+    """Ролі користувачів у системі"""
     user = 'User'
     moder = 'Moderator'
     admin = 'Administrator'
@@ -13,6 +27,10 @@ class UserRoleEnum(enum.Enum):
 
 # ---------------- USER ---------------- #
 class User(Base):
+    """
+    Користувачі системи.
+    Перший користувач завжди адміністратор.
+    """
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
@@ -44,6 +62,10 @@ post_m2m_hashtag = Table(
 
 # ---------------- POST ---------------- #
 class Post(Base):
+    """
+    Пост зі світлиною, описом та трансформаціями.
+    Підтримує хештеги, рейтинги та коментарі.
+    """
     __tablename__ = "posts"
 
     id = Column(Integer, primary_key=True)
@@ -65,11 +87,13 @@ class Post(Base):
 
     @aggregated('rating', Column(Numeric))
     def avg_rating(self):
+        """Середній рейтинг посту"""
         return func.avg(Rating.rate)
 
 
 # ---------------- HASHTAG ---------------- #
 class Hashtag(Base):
+    """Унікальний тег для постів."""
     __tablename__ = 'hashtags'
 
     id = Column(Integer, primary_key=True)
@@ -83,6 +107,10 @@ class Hashtag(Base):
 
 # ---------------- COMMENT ---------------- #
 class Comment(Base):
+    """
+    Коментар до посту.
+    Користувач може редагувати, адмін/модератор — видаляти.
+    """
     __tablename__ = 'comments'
 
     id = Column(Integer, primary_key=True)
@@ -100,6 +128,7 @@ class Comment(Base):
 
 # ---------------- RATING ---------------- #
 class Rating(Base):
+    """Рейтинг посту від користувачів від 1 до 5 зірок."""
     __tablename__ = 'ratings'
 
     id = Column(Integer, primary_key=True)
@@ -115,6 +144,7 @@ class Rating(Base):
 
 # ---------------- BLACKLIST ---------------- #
 class BlacklistToken(Base):
+    """Чорний список токенів для logout."""
     __tablename__ = 'blacklist_tokens'
 
     id = Column(Integer, primary_key=True)
