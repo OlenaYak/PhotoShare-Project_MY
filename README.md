@@ -183,10 +183,29 @@ https://photoshare-project-1.fly.dev/docs
 https://photoshare-project-1.fly.dev/redoc
 
 
+
+Тести
+coverage report -m --skip-covered
+coverage run -m pytest
+coverage report -m
+
+
 4. Логи:
 
 fly logs
 fly status
+
+5. Вийти з інтерактивної сесії Fly CLI
+
+exit
+
+6. Це завершить поточну CLI-сесію.
+
+Очистити локальні конфігурації Fly
+
+flyctl auth logout
+
+Це розлогінить з Fly CLI.
 
 
 ### 🛠 API
