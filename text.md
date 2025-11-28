@@ -81,6 +81,14 @@ flyctl logs
 Виконай:
 flyctl machines list --app photoshare-project-1
 
+✅ Зупинити контейнер якщо машин багато
+
+flyctl machines stop (код машини)
+
+✅ Видалити, якщо вам не потрібна стара:
+
+flyctl machines remove e822e63f71e378
+
 1️⃣ Підключення через psql
 
 Використовуємо URL з .env:
