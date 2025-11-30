@@ -1,13 +1,18 @@
+## Команда
+
+Цей проєкт був розроблений у співпраці з:
+
+- Тімлід: [Your-Natka](https://github.com/Your-Natka)
+- Розробник: Olena Yakovchuk
+
 # 📸 PhotoShare
 
 PhotoShare — це платформа для зберігання, трансформації та обміну фотографіями з підтримкою рейтингів, коментарів, хештегів та пошуку.
-
 
 [![Python](https://img.shields.io/badge/Python-3.11-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.105.2-green)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)](https://www.postgresql.org/)
 [![Fly.io](https://img.shields.io/badge/Deploy-Fly.io-purple)](https://fly.io/)
-
 
 ---
 
@@ -122,33 +127,38 @@ cd Photoshare-Project
 2. Встановити залежності:
 
 python -m venv venv
-source venv/bin/activate   # Linux/Mac
-venv\Scripts\activate      # Windows
+source venv/bin/activate # Linux/Mac
+venv\Scripts\activate # Windows
 pip install -r requirements.txt
-
 
 3. Створити .env за прикладом .env.example і заповнити секрети.
 
 🔑 Змінні середовища
+
 # DATABASE
+
 SQLALCHEMY_DATABASE_URL=postgresql://user:pass@host:port/db
 
 # AUTH
-SECRET_KEY=твій_секретний_ключ
+
+SECRET*KEY=твій*секретний_ключ
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 
 # MAIL
-MAIL_USERNAME=твоє_ім'я_юзера
-MAIL_PASSWORD=твої_пароль
-MAIL_FROM=твоя_пошта
+
+MAIL*USERNAME=твоє*ім'я*юзера
+MAIL_PASSWORD=твої*пароль
+MAIL*FROM=твоя*пошта
 MAIL_PORT=587
 MAIL_SERVER=smtp.gmail.com
 
 # REDIS
+
 REDIS_URL=redis://user:pass@host:port
 
 # CLOUDINARY
+
 CLOUDINARY_NAME=твій_cloudinary_name
 CLOUDINARY_API_KEY=твій_API_key
 CLOUDINARY_API_SECRET=твій_API_secret
@@ -168,7 +178,6 @@ fly postgres create
 fly postgres connection-string -a your-app-db
 fly secrets set SQLALCHEMY_DATABASE_URL="postgres://..."
 
-
 2. Деплой:
 
 fly deploy
@@ -180,11 +189,9 @@ https://photoshare-project-1.fly.dev/docs
 Документація:
 https://photoshare-project-1.fly.dev/redoc
 
-
-Тести: 
+Тести:
 coverage report -m --skip-covered
-coverage report 
-
+coverage report
 
 4. Логи:
 
@@ -202,7 +209,6 @@ exit
 flyctl auth logout
 
 Це розлогінить з Fly CLI.
-
 
 ### 🛠 API
 
@@ -241,20 +247,19 @@ POST /api/transformations/qr/{post_id} — генерація QR-коду
 Приклад трансформації (повернути на 45° та додати текст):
 
 {
-  "circle": {"use_filter": true, "height": 400, "width": 400},
-  "effect": {"use_filter": false},
-  "resize": {"use_filter": true, "crop": false, "fill": true, "height": 400, "width": 400},
-  "text": {"use_filter": true, "font_size": 50, "text": "Hello"},
-  "rotate": {"use_filter": true, "width": 400, "degree": 45}
+"circle": {"use_filter": true, "height": 400, "width": 400},
+"effect": {"use_filter": false},
+"resize": {"use_filter": true, "crop": false, "fill": true, "height": 400, "width": 400},
+"text": {"use_filter": true, "font_size": 50, "text": "Hello"},
+"rotate": {"use_filter": true, "width": 400, "degree": 45}
 }
-
 
 Відповідь QR-коду:
 
 {
-  "post_id": 10,
-  "qr_code_url": "/media/qrcodes/1.png",
-  "transformed_url": "https://res.cloudinary.com/.../transformed_image.png"
+"post_id": 10,
+"qr_code_url": "/media/qrcodes/1.png",
+"transformed_url": "https://res.cloudinary.com/.../transformed_image.png"
 }
 
 4. Коментарі
@@ -309,8 +314,7 @@ GET /search/by_tag/{tag}?sort=date|rating
 
 ### 🧪 Тести
 
-pytest --cov=app 
-
+pytest --cov=app
 
 Юніт-тести роутів
 
